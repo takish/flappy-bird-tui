@@ -6,7 +6,6 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/takish/flappy-bird-tui/game"
-	"github.com/takish/flappy-bird-tui/storage"
 	"github.com/takish/flappy-bird-tui/ui"
 )
 
@@ -42,12 +41,6 @@ func main() {
 	if len(os.Args) > 1 && (os.Args[1] == "--version" || os.Args[1] == "-v") {
 		fmt.Printf("flappy-bird-tui %s (commit: %s, built: %s)\n", version, commit, date)
 		return
-	}
-
-	// Initialize sound system
-	if err := storage.InitSound(); err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Failed to initialize sound: %v\n", err)
-		// Continue without sound - not a fatal error
 	}
 
 	p := tea.NewProgram(modelWrapper{game.NewModel()}, tea.WithAltScreen())
