@@ -46,6 +46,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				return m, tick(m.gameSpeed)
 			case StatePlaying:
 				m.bird.Jump()
+				m.jumpCount++ // Track jump count
 				PlaySound("jump")
 			case StateGameOver:
 				m = m.resetGame()
@@ -66,6 +67,17 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 		// Update bird physics
 		m.bird.Update()
+
+		// Track height statistics
+		birdY := m.bird.GetY()
+		if birdY < m.maxHeight {
+			m.maxHeight = birdY
+		}
+		if birdY > m.minHeight {
+			m.minHeight = birdY
+		}
+		m.totalHeight += birdY
+		m.heightSamples++
 
 		// Check ceiling/floor collision
 		if m.bird.GetY() < 0 || m.bird.GetY() >= m.height {
@@ -129,16 +141,40 @@ func (m Model) handleGameOver() Model {
 	PlaySound("gameover")
 	elapsed := time.Since(m.startTime)
 
+	// Calculate average height
+	avgHeight := 0.0
+	if m.heightSamples > 0 {
+		avgHeight = float64(m.totalHeight) / float64(m.heightSamples)
+	}
+
+	// Create high score entry with statistics
+	newScore := HighScore{
+		Score:      m.score,
+		Duration:   elapsed,
+		Date:       time.Now(),
+		JumpCount:  m.jumpCount,
+		MaxHeight:  m.maxHeight,
+		MinHeight:  m.minHeight,
+		AvgHeight:  avgHeight,
+		Difficulty: m.difficulty.String(),
+	}
+
 	// Check if this is a new high score
 	if IsNewHighScore(m.score, m.highScore) {
 		m.isNewRecord = true
 		// Save new high score
-		if err := SaveHighScore(m.score, elapsed); err == nil {
+		if err := SaveHighScore(newScore); err == nil {
 			// Reload high score from disk
 			if hs, err := LoadHighScore(); err == nil {
 				m.highScore = hs
 			}
 		}
+	}
+
+	// Add to rankings
+	newRankings, _ := AddToRankings(m.rankings, newScore)
+	if err := SaveRankings(newRankings); err == nil {
+		m.rankings = newRankings
 	}
 
 	return m

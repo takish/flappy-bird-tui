@@ -1,0 +1,10 @@
+Never use console.log or fmt.Println in game logic - use PlaySound() for audio feedback
+Always run go fmt before committing
+Maintain Model immutability - return new Model from Update(), never mutate in place
+Keep View() pure - no side effects, only render based on Model
+Add tests for new physics or scoring logic
+Use lipgloss for all terminal styling - no ANSI codes directly
+Keep game speed between 10-60ms for playability
+Preserve GameState transitions through resetGame() - never lose high scores
+Use constants for magic numbers (pipe gaps, speeds, dimensions)
+Always handle terminal resize gracefully in Bubble Tea updates

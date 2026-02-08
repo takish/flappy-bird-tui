@@ -1,3 +1,5 @@
+version: 2
+
 project_name: flappy-bird-tui
 
 before:
@@ -22,20 +24,13 @@ builds:
       - -X main.date={{.Date}}
 
 archives:
-  - format: tar.gz
-    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
-    format_overrides:
-      - goos: windows
-        format: zip
+  - name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
     files:
       - README.md
       - LICENSE*
 
 checksum:
   name_template: 'checksums.txt'
-
-snapshot:
-  name_template: "{{ incpatch .Version }}-next"
 
 changelog:
   sort: asc
@@ -44,17 +39,3 @@ changelog:
       - '^docs:'
       - '^test:'
       - '^chore:'
-
-brews:
-  - repository:
-      owner: takish
-      name: homebrew-tap
-      token: "{{ .Env.GITHUB_TOKEN }}"
-    folder: Formula
-    homepage: https://github.com/takish/flappy-bird-tui
-    description: "Flappy Bird in your terminal - A TUI game built with Bubble Tea"
-    license: MIT
-    install: |
-      bin.install "flappy-bird-tui"
-    test: |
-      system "#{bin}/flappy-bird-tui", "--version"

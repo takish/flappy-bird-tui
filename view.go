@@ -11,7 +11,7 @@ import (
 const (
 	birdChar     = "●" // Round bird - more visible
 	pipeBodyChar = "▓" // Pipe body - dark pattern block
-	pipeEdgeChar = "█" // Pipe edge - solid block
+	pipeEdgeChar = "█" // Pipe edge - full block
 )
 
 // getStyles returns the styles for the current theme
@@ -239,9 +239,6 @@ func (m Model) renderGameOver() string {
 	seconds := int(elapsed.Seconds()) % 60
 	milliseconds := int(elapsed.Milliseconds()) % 1000
 
-	score := fmt.Sprintf("Final Score: %d  |  Time: %02d:%02d.%03d", m.score, minutes, seconds, milliseconds)
-	instructions := "Press SPACE or R to restart  |  Press Q to quit"
-
 	// Display new record message if applicable
 	if m.isNewRecord {
 		newRecord := newRecordStyle.Render("★ NEW RECORD! ★")
@@ -249,8 +246,42 @@ func (m Model) renderGameOver() string {
 		b.WriteString("\n")
 	}
 
+	// Display score and time
+	score := fmt.Sprintf("Score: %d  |  Time: %02d:%02d.%03d", m.score, minutes, seconds, milliseconds)
 	b.WriteString(centerText(score, m.width))
+	b.WriteString("\n")
+
+	// Display statistics
+	avgHeight := 0.0
+	if m.heightSamples > 0 {
+		avgHeight = float64(m.totalHeight) / float64(m.heightSamples)
+	}
+	stats := fmt.Sprintf("Jumps: %d  |  Max Height: %d  |  Avg: %.1f", m.jumpCount, m.maxHeight, avgHeight)
+	b.WriteString(centerText(stats, m.width))
 	b.WriteString("\n\n")
+
+	// Display rankings (top 5 for game over screen)
+	if len(m.rankings) > 0 {
+		b.WriteString(centerText("=== TOP RANKINGS ===", m.width))
+		b.WriteString("\n")
+		displayCount := 5
+		if len(m.rankings) < displayCount {
+			displayCount = len(m.rankings)
+		}
+		for i := 0; i < displayCount; i++ {
+			rank := m.rankings[i]
+			rankMin := int(rank.Duration.Minutes())
+			rankSec := int(rank.Duration.Seconds()) % 60
+			rankMs := int(rank.Duration.Milliseconds()) % 1000
+			rankText := fmt.Sprintf("%d. %d pts  %02d:%02d.%03d  [%s]",
+				i+1, rank.Score, rankMin, rankSec, rankMs, rank.Difficulty)
+			b.WriteString(centerText(rankText, m.width))
+			b.WriteString("\n")
+		}
+		b.WriteString("\n")
+	}
+
+	instructions := "Press SPACE or R to restart  |  Press Q to quit"
 	b.WriteString(centerText(instructions, m.width))
 
 	return b.String()

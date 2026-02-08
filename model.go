@@ -24,9 +24,16 @@ type Model struct {
 	gameSpeed    time.Duration
 	startTime    time.Time // Game start time for elapsed time display
 	highScore    *HighScore
-	isNewRecord  bool       // Flag to indicate if current game is a new high score
-	difficulty   Difficulty // Current difficulty level
-	theme        Theme      // Current color theme
+	rankings     []HighScore // Top 10 rankings
+	isNewRecord  bool        // Flag to indicate if current game is a new high score
+	difficulty   Difficulty  // Current difficulty level
+	theme        Theme       // Current color theme
+	// Statistics
+	jumpCount    int // Number of jumps
+	maxHeight    int // Highest Y position reached
+	minHeight    int // Lowest Y position reached
+	totalHeight  int // Sum of heights for average calculation
+	heightSamples int // Number of height samples
 	err          error
 }
 
@@ -41,6 +48,12 @@ func initialModel() Model {
 		highScore = &HighScore{} // Use empty high score on error
 	}
 
+	// Load rankings
+	rankings, err := LoadRankings()
+	if err != nil {
+		rankings = []HighScore{} // Use empty rankings on error
+	}
+
 	return Model{
 		state:      StateTitle,
 		bird:       NewBird(10, height/2),
@@ -50,6 +63,7 @@ func initialModel() Model {
 		height:     height,
 		gameSpeed:  time.Millisecond * 45, // ~22 FPS - faster scroll speed
 		highScore:  highScore,
+		rankings:   rankings,
 		difficulty: DifficultyNormal, // Default difficulty
 		theme:      ThemeClassic,     // Default theme
 	}
@@ -60,17 +74,24 @@ func (m Model) resetGame() Model {
 	settings := m.difficulty.GetSettings()
 
 	return Model{
-		state:       StatePlaying,
-		bird:        NewBird(10, m.height/2),
-		pipes:       []*Pipe{}, // Start with no pipes - gives player time to adjust
-		score:       0,
-		width:       m.width,
-		height:      m.height,
-		gameSpeed:   settings.InitialSpeed, // Use difficulty-based speed
-		startTime:   time.Now(),            // Record game start time
-		highScore:   m.highScore,
-		isNewRecord: false,
-		difficulty:  m.difficulty,
-		theme:       m.theme,
+		state:         StatePlaying,
+		bird:          NewBird(10, m.height/2),
+		pipes:         []*Pipe{}, // Start with no pipes - gives player time to adjust
+		score:         0,
+		width:         m.width,
+		height:        m.height,
+		gameSpeed:     settings.InitialSpeed, // Use difficulty-based speed
+		startTime:     time.Now(),            // Record game start time
+		highScore:     m.highScore,
+		rankings:      m.rankings,
+		isNewRecord:   false,
+		difficulty:    m.difficulty,
+		theme:         m.theme,
+		// Initialize statistics
+		jumpCount:     0,
+		maxHeight:     m.height / 2,
+		minHeight:     m.height / 2,
+		totalHeight:   0,
+		heightSamples: 0,
 	}
 }

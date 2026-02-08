@@ -41,8 +41,8 @@ func (b *Bird) GetY() int {
 func (b *Bird) GetSprite() string {
 	if b.velocity < 0 {
 		// Going up
-		return "^〇"
+		return "^○"
 	}
 	// Going down
-	return "v〇"
+	return "v○"
 }
