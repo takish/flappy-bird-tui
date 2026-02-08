@@ -5,28 +5,29 @@ import (
 )
 
 const (
-	pipeGap   = 8  // Gap between top and bottom pipes
-	pipeWidth = 4  // Width of pipes
-	minPipeY  = 3  // Minimum gap from top
+	pipeWidth = 5 // Width of pipes - increased from 4 for thicker blocks
+	minPipeY  = 3 // Minimum gap from top
 )
 
 // Pipe represents an obstacle
 type Pipe struct {
-	x      int
-	gapY   int // Y position of the gap's top
-	passed bool
+	x       int
+	gapY    int // Y position of the gap's top
+	gapSize int // Size of the gap
+	passed  bool
 }
 
 // NewPipe creates a new pipe at the right edge of the screen
-func NewPipe(screenWidth, screenHeight int) *Pipe {
+func NewPipe(screenWidth, screenHeight, gapSize int) *Pipe {
 	// Random gap position, ensuring gap fits within screen
-	maxGapY := screenHeight - pipeGap - minPipeY
+	maxGapY := screenHeight - gapSize - minPipeY
 	gapY := rand.IntN(maxGapY-minPipeY) + minPipeY
 
 	return &Pipe{
-		x:      screenWidth,
-		gapY:   gapY,
-		passed: false,
+		x:       screenWidth,
+		gapY:    gapY,
+		gapSize: gapSize,
+		passed:  false,
 	}
 }
 
@@ -47,7 +48,7 @@ func (p *Pipe) CollidesWith(bird *Bird) bool {
 	// Check if bird is horizontally aligned with pipe
 	if bird.x >= p.x && bird.x < p.x+pipeWidth {
 		// Check if bird is outside the gap
-		if birdY < p.gapY || birdY >= p.gapY+pipeGap {
+		if birdY < p.gapY || birdY >= p.gapY+p.gapSize {
 			return true
 		}
 	}

@@ -1,8 +1,8 @@
 package main
 
 const (
-	gravity  = 0.8
-	jumpForce = -3.0
+	gravity   = 0.3  // Reduced from 0.8 - gentler fall
+	jumpForce = -2.3 // Increased from -1.8 - more responsive jump
 )
 
 // Bird represents the player character
