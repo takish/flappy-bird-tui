@@ -44,3 +44,17 @@ changelog:
       - '^docs:'
       - '^test:'
       - '^chore:'
+
+brews:
+  - name: flappy-bird-tui
+    repository:
+      owner: takish
+      name: homebrew-tap
+      token: "{{ .Env.GITHUB_TOKEN }}"
+    homepage: https://github.com/takish/flappy-bird-tui
+    description: Terminal-based Flappy Bird clone built with Go and Bubble Tea
+    license: MIT
+    install: |
+      bin.install "flappy-bird-tui"
+    test: |
+      system "#{bin}/flappy-bird-tui --version"
