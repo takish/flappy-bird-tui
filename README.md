@@ -49,7 +49,7 @@ brew install flappy-bird-tui
 git clone https://github.com/takish/flappy-bird-tui.git
 cd flappy-bird-tui
 make build
-./flappy-bird
+./flappy-bird-tui
 ```
 
 ### Go Install

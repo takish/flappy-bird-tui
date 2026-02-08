@@ -94,7 +94,7 @@ flappy-bird-tui/
 | `game/model.go` | Game state | `Model`, `GameState`, `Stats`, `NewModel()` |
 | `game/update.go` | Input/tick handling | `Update()`, `Init()`, `resetGame()` |
 | `storage/highscore.go` | Persistence | `HighScore`, `Load/SaveHighScore()`, `Load/SaveRankings()` |
-| `storage/sound.go` | Audio feedback | `InitSound()`, `PlaySound()`, `playTone()` (sine wave generation) |
+| `storage/sound.go` | Audio feedback | `PlaySound()` (terminal bell) |
 | `ui/view.go` | ASCII rendering | `View()`, theme-aware rendering |
 
 ### Game States
@@ -142,18 +142,12 @@ Stats tracked (stored in `storage.HighScore`):
 Key packages (see `go.mod`):
 - `github.com/charmbracelet/bubbletea` - TUI framework
 - `github.com/charmbracelet/lipgloss` - Terminal styling
-- `github.com/faiface/beep` - Audio playback library for retro-style sound effects
 
 Bubble Tea handles:
 - Keyboard input
 - Terminal size detection
 - Alt screen buffer
 - Tick-based updates
-
-Beep handles:
-- Audio speaker initialization
-- Sine wave tone generation
-- Asynchronous sound playback
 
 ## Code Conventions
 
@@ -210,7 +204,7 @@ Builds for macOS, Linux, Windows (see goreleaser config).
 
 ## Known Limitations
 
-- Audio is sine wave tones only (retro-style beeps, no complex sound effects)
+- Audio is terminal bell only (simple beeps via `\a` escape sequence)
 - Fixed terminal size (80x24)
 - Single player only
 - No pause functionality
