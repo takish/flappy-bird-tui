@@ -23,3 +23,4 @@ dist/
 
 # Claude Code settings (personal development environment)
 .claude/
+.github/
