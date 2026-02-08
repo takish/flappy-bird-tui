@@ -86,11 +86,11 @@ func playTone(frequency int, duration time.Duration) {
 		return // Skip if frequency is invalid
 	}
 
-	// Reduce volume by -6dB (approximately 50% volume)
+	// Adjust volume to -3dB (slightly quieter than default)
 	volume := &effects.Volume{
 		Streamer: tone,
 		Base:     2,
-		Volume:   -6,
+		Volume:   -3,
 		Silent:   false,
 	}
 

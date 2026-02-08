@@ -1,0 +1,56 @@
+version: 2
+
+run:
+  timeout: 3m
+  go: '1.25'
+
+linters:
+  # デフォルトで有効なlinterを使用（errcheck, govet, ineffassign, staticcheck, unused）
+  # 追加で以下を有効化
+  enable:
+    - misspell      # スペルミス検出
+    - gocyclo       # 循環的複雑度チェック
+
+formatters:
+  enable:
+    - gofmt         # フォーマットチェック
+
+linters-settings:
+  errcheck:
+    # Bubble TeaのCmd返却やログ出力は意図的に無視するケースが多い
+    exclude-functions:
+      - fmt.Fprintf
+      - fmt.Fprintln
+
+  gocyclo:
+    # TUIの描画ロジックは複雑になりがち（特にUpdate関数）
+    min-complexity: 35
+
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 10
+
+  # 意図的に無視している箇所（調査済み）
+  exclude-rules:
+    # storage/sound.go: エラーは意図的に無視（無効な周波数の場合はスキップ）
+    - path: storage/sound\.go
+      linters:
+        - errcheck
+      text: "Error return value of.*is not checked"
+
+    # storage/highscore.go: ランク順位は不要なので_で無視
+    - path: storage/highscore\.go
+      linters:
+        - ineffassign
+      text: "ineffectual assignment to.*_"
+
+    # ui/view.go: getStyles()の戻り値を部分的に使用するのは意図的
+    - path: ui/view\.go
+      linters:
+        - ineffassign
+      text: "ineffectual assignment to.*_"
+
+    # staticcheckの軽微な最適化提案は無視（動作に影響なし）
+    - linters:
+        - staticcheck
+      text: "QF(1003|1009)"
