@@ -23,6 +23,8 @@ A terminal user interface (TUI) version of Flappy Bird built with Go and [Bubble
 
 ### Progress Tracking
 - High score persistence
+- Top 10 rankings with difficulty filtering
+- Comprehensive game statistics (jumps, max/min/avg height)
 - Elapsed time tracking (MM:SS.mmm)
 - New record celebration
 
@@ -46,8 +48,8 @@ brew install flappy-bird-tui
 ```bash
 git clone https://github.com/takish/flappy-bird-tui.git
 cd flappy-bird-tui
-go build
-./flappy-bird-tui
+make build
+./flappy-bird
 ```
 
 ### Go Install
@@ -72,29 +74,32 @@ go install github.com/takish/flappy-bird-tui@latest
 
 ## Architecture
 
-Built using the Elm Architecture (Model-Update-View) pattern via Bubble Tea:
+Built using the Elm Architecture (Model-Update-View) pattern via Bubble Tea with a layered architecture:
 
-- `main.go` - Entry point
-- `model.go` - Game state management
-- `update.go` - Input and tick handling
-- `view.go` - ASCII rendering with theming
-- `bird.go` - Bird physics (gravity, jump)
-- `pipe.go` - Pipe generation, movement, and collision detection
-- `difficulty.go` - Difficulty level settings
-- `theme.go` - Color theme definitions
-- `highscore.go` - High score persistence
-- `sound.go` - Audio feedback
+- `main.go` - Entry point with modelWrapper
+- `domain/` - Core domain models (Bird, Pipe, Difficulty, Theme)
+- `game/` - Game logic (Model, Update)
+- `storage/` - Persistence and sound (HighScore, Sound)
+- `ui/` - View rendering
 
 ## Development
 
 ### Build
 ```bash
-go build -o flappy-bird-tui
+make build
+# or: go build -o flappy-bird .
+```
+
+### Run
+```bash
+make run
+# or: go run .
 ```
 
 ### Test
 ```bash
-go test ./...
+make test
+# or: go test ./...
 ```
 
 ### Release
@@ -102,6 +107,7 @@ go test ./...
 git tag v0.1.0
 git push origin v0.1.0
 goreleaser release --clean
+# or: make release (for local multi-platform builds)
 ```
 
 ## License

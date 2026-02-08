@@ -1,4 +1,4 @@
-package main
+package domain
 
 import "time"
 
@@ -13,11 +13,11 @@ const (
 
 // DifficultySettings holds the parameters for each difficulty level
 type DifficultySettings struct {
-	InitialSpeed    time.Duration // Initial game speed
-	SpeedIncrement  time.Duration // How much to speed up
-	ScoreInterval   int           // Score interval for speed increase
-	MinSpeed        time.Duration // Minimum (maximum) speed
-	PipeGap         int           // Gap between top and bottom pipes
+	InitialSpeed   time.Duration // Initial game speed
+	SpeedIncrement time.Duration // How much to speed up
+	ScoreInterval  int           // Score interval for speed increase
+	MinSpeed       time.Duration // Minimum (maximum) speed
+	PipeGap        int           // Gap between top and bottom pipes
 }
 
 // GetSettings returns the settings for a difficulty level

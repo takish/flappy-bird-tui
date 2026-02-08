@@ -8,49 +8,94 @@ Terminal-based Flappy Bird clone built with Go, Bubble Tea (TUI framework), and 
 
 ## Quick Commands
 
-```bash
-# Build and run
-go build && ./flappy-bird-tui
+**Binary name: `flappy-bird-tui`** (統一ルール)
 
-# Run directly
-go run .
+```bash
+# Build (default target)
+make
+# or: make build
+
+# Build and run
+make build && ./flappy-bird-tui
+
+# Run directly (without building binary)
+make run
+# or: go run .
 
 # Test
-go test ./...
+make test
+# or: go test ./...
+
+# Lint (requires golangci-lint)
+make lint
+
+# Clean build artifacts
+make clean
+
+# Multi-platform release build
+make release
+
+# Install to GOPATH/bin
+make install
+
+# Help
+make help
+
+# Version info
+./flappy-bird-tui --version
 
 # Release (requires goreleaser)
 git tag v0.1.0
 git push origin v0.1.0
 goreleaser release --clean
-
-# Version info
-./flappy-bird-tui --version
 ```
 
 ## Architecture
 
 ### Elm Architecture Pattern (TEA)
 
-Built on Bubble Tea's TEA implementation:
+Built on Bubble Tea's TEA implementation with a layered architecture:
 
-1. **Model** (`model.go`) - Game state container
-2. **Update** (`update.go`) - State transitions from messages
-3. **View** (`view.go`) - Render ASCII representation
+1. **Model** (`game/model.go`) - Game state container
+2. **Update** (`game/update.go`) - State transitions from messages
+3. **View** (`ui/view.go`) - Render ASCII representation
+
+### Package Structure
+
+Follows a layered architecture pattern:
+
+```
+flappy-bird-tui/
+├── main.go          # Entry point with modelWrapper
+├── domain/          # Core domain models (entities)
+│   ├── bird.go      # Bird physics and state
+│   ├── pipe.go      # Pipe generation and collision
+│   ├── difficulty.go # Difficulty level settings
+│   └── theme.go     # Color theme definitions
+├── game/            # Game logic (use cases)
+│   ├── model.go     # Game state and stats
+│   └── update.go    # Input/tick handling, state transitions
+├── storage/         # Persistence layer
+│   ├── highscore.go # JSON save/load to ~/.flappy-bird-tui/
+│   └── sound.go     # Terminal beep initialization
+└── ui/              # Presentation layer
+    └── view.go      # ASCII rendering with theming
+```
 
 ### Core Components
 
-| File | Purpose | Key Types/Functions |
-|------|---------|---------------------|
-| `main.go` | Entry point, CLI flags | `main()`, version vars |
-| `model.go` | Game state | `Model`, `GameState`, `initialModel()` |
-| `update.go` | Input/tick handling | `Update()`, `Init()` |
-| `view.go` | ASCII rendering | `View()`, theme-aware rendering |
-| `bird.go` | Bird physics | `Bird`, gravity, jump |
-| `pipe.go` | Pipe system | `Pipe`, generation, collision |
-| `difficulty.go` | Difficulty settings | `Difficulty`, `DifficultySettings` |
-| `theme.go` | Color themes | `Theme`, `ColorScheme` |
-| `highscore.go` | Persistence | JSON save/load to `~/.flappy-bird-tui/` |
-| `sound.go` | Terminal beeps | `PlaySound()` |
+| Package/File | Purpose | Key Types/Functions |
+|-------------|---------|---------------------|
+| `main.go` | Entry point, CLI flags | `main()`, `modelWrapper`, version vars |
+| `domain/bird.go` | Bird physics | `Bird`, `Update()`, `Jump()` |
+| `domain/pipe.go` | Pipe system | `Pipe`, `NewPipe()`, `CheckCollision()` |
+| `domain/difficulty.go` | Difficulty settings | `Difficulty`, `GetSettings()` |
+| `domain/theme.go` | Color themes | `Theme`, `GetColors()` |
+| `game/model.go` | Game state | `Model`, `GameState`, `Stats`, `NewModel()` |
+| `game/update.go` | Input/tick handling | `Update()`, `Init()`, `resetGame()` |
+| `storage/highscore.go` | Persistence | `HighScore`, `Load/SaveHighScore()`, `Load/SaveRankings()` |
+| `storage/sound.go` | Audio feedback | `InitSound()`, `PlaySound()`, `playTone()` (sine wave generation) |
+| `ui/view.go` | ASCII rendering | `View()`, theme-aware rendering |
 
 ### Game States
 
@@ -81,25 +126,34 @@ const (
 ## Data Persistence
 
 High scores saved to `~/.flappy-bird-tui/`:
-- `highscore.json` - All-time best
+- `highscore.json` - All-time best score
 - `rankings.json` - Top 10 scores with stats
 
-Stats tracked:
-- Score, duration, date
-- Jump count, min/max/avg height
-- Difficulty level
+Stats tracked (stored in `storage.HighScore`):
+- Score, duration (elapsed time), date
+- Jump count (total jumps during game)
+- Max height (highest Y position reached)
+- Min height (lowest Y position reached)
+- Avg height (average Y position across samples)
+- Difficulty level (Easy/Normal/Hard)
 
 ## Dependencies
 
 Key packages (see `go.mod`):
 - `github.com/charmbracelet/bubbletea` - TUI framework
 - `github.com/charmbracelet/lipgloss` - Terminal styling
+- `github.com/faiface/beep` - Audio playback library for retro-style sound effects
 
 Bubble Tea handles:
 - Keyboard input
 - Terminal size detection
 - Alt screen buffer
 - Tick-based updates
+
+Beep handles:
+- Audio speaker initialization
+- Sine wave tone generation
+- Asynchronous sound playback
 
 ## Code Conventions
 
@@ -112,12 +166,13 @@ Bubble Tea handles:
 ## Testing Strategy
 
 Currently minimal tests. Testable areas:
-- Physics calculations (`bird.go`)
-- Collision detection (`pipe.go`)
-- Difficulty settings (`difficulty.go`)
-- High score logic (`highscore.go`)
+- Physics calculations (`domain/bird.go`)
+- Collision detection (`domain/pipe.go`)
+- Difficulty settings (`domain/difficulty.go`)
+- High score logic (`storage/highscore.go`)
+- Stats calculations (`game/model.go` - Stats struct)
 
-Testing Bubble Tea components requires mocking tea.Msg flows.
+Testing Bubble Tea components (`game/update.go`) requires mocking tea.Msg flows.
 
 ## Release Process
 
@@ -132,24 +187,30 @@ Builds for macOS, Linux, Windows (see goreleaser config).
 ## Common Patterns
 
 **Adding a new difficulty:**
-1. Add constant to `difficulty.go`
+1. Add constant to `domain/difficulty.go`
 2. Add case to `GetSettings()`
 3. Add case to `String()`
-4. Update title screen keybindings in `update.go`
+4. Update title screen keybindings in `game/update.go`
 
 **Adding a new theme:**
-1. Add constant to `theme.go`
+1. Add constant to `domain/theme.go`
 2. Add case to `GetColors()`
 3. Add case to `String()`
-4. Theme cycles with `T` key (handled in `update.go`)
+4. Theme cycles with `T` key (handled in `game/update.go`)
 
 **Adding new sound events:**
-1. Add case to `sound.go` `PlaySound()`
-2. Call `PlaySound("event_name")` in `update.go`
+1. Add case to `storage/sound.go` `PlaySound()`
+2. Call `storage.PlaySound("event_name")` in `game/update.go`
+
+**Adding a new statistic:**
+1. Add field to `Stats` struct in `game/model.go`
+2. Update calculation logic in `game/update.go`
+3. Add corresponding field to `storage.HighScore` for persistence
+4. Update display in `ui/view.go`
 
 ## Known Limitations
 
-- Audio is terminal bell only (no external sounds)
+- Audio is sine wave tones only (retro-style beeps, no complex sound effects)
 - Fixed terminal size (80x24)
 - Single player only
 - No pause functionality

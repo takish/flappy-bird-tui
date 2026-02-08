@@ -1,4 +1,4 @@
-package main
+package ui
 
 import (
 	"fmt"
@@ -6,17 +6,47 @@ import (
 	"time"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/takish/flappy-bird-tui/domain"
+	"github.com/takish/flappy-bird-tui/game"
 )
 
 const (
-	birdChar     = "●" // Round bird - more visible
-	pipeBodyChar = "▓" // Pipe body - dark pattern block
-	pipeEdgeChar = "█" // Pipe edge - full block
+	birdChar         = "●" // Round bird - more visible
+	pipeBodyChar     = "▓" // Pipe body - dark pattern block
+	pipeEdgeChar     = "█" // Pipe edge - full block
+	titlePadding     = 16  // Vertical padding for title screen ASCII art
+	gameOverPadding  = 12  // Vertical padding for game over screen ASCII art
 )
 
+// formatDuration formats a duration as MM:SS.mmm
+func formatDuration(d time.Duration) (minutes, seconds, milliseconds int) {
+	minutes = int(d.Minutes())
+	seconds = int(d.Seconds()) % 60
+	milliseconds = int(d.Milliseconds()) % 1000
+	return
+}
+
+// View renders the current game state
+func View(m game.Model) string {
+	if m.Width < 40 || m.Height < 10 {
+		return "Terminal too small! Please resize to at least 40x10"
+	}
+
+	switch m.State {
+	case game.StateTitle:
+		return renderTitle(m)
+	case game.StatePlaying:
+		return renderGame(m)
+	case game.StateGameOver:
+		return renderGameOver(m)
+	}
+
+	return ""
+}
+
 // getStyles returns the styles for the current theme
-func (m Model) getStyles() (titleStyle, scoreStyle, gameOverStyle, newRecordStyle lipgloss.Style) {
-	colors := m.theme.GetColors()
+func getStyles(m game.Model) (titleStyle, scoreStyle, gameOverStyle, newRecordStyle lipgloss.Style) {
+	colors := m.Theme.GetColors()
 
 	titleStyle = lipgloss.NewStyle().
 		Bold(true).
@@ -36,25 +66,7 @@ func (m Model) getStyles() (titleStyle, scoreStyle, gameOverStyle, newRecordStyl
 	return
 }
 
-// View renders the current game state
-func (m Model) View() string {
-	if m.width < 40 || m.height < 10 {
-		return "Terminal too small! Please resize to at least 40x10"
-	}
-
-	switch m.state {
-	case StateTitle:
-		return m.renderTitle()
-	case StatePlaying:
-		return m.renderGame()
-	case StateGameOver:
-		return m.renderGameOver()
-	}
-
-	return ""
-}
-
-func (m Model) renderTitle() string {
+func renderTitle(m game.Model) string {
 	var b strings.Builder
 
 	// ASCII Art for FLAPPY
@@ -77,9 +89,9 @@ func (m Model) renderTitle() string {
 
 	// Difficulty selection with highlighted current difficulty
 	difficultyText := "Difficulty: "
-	if m.difficulty == DifficultyEasy {
+	if m.Difficulty == domain.DifficultyEasy {
 		difficultyText += "[1: Easy*]  2: Normal  3: Hard"
-	} else if m.difficulty == DifficultyHard {
+	} else if m.Difficulty == domain.DifficultyHard {
 		difficultyText += "1: Easy  2: Normal  [3: Hard*]"
 	} else {
 		difficultyText += "1: Easy  [2: Normal*]  3: Hard"
@@ -87,7 +99,7 @@ func (m Model) renderTitle() string {
 
 	instructions := "Press SPACE to start  |  Press Q to quit"
 
-	padding := (m.height - 16) / 2
+	padding := (m.Height - titlePadding) / 2
 	if padding < 0 {
 		padding = 0
 	}
@@ -96,66 +108,64 @@ func (m Model) renderTitle() string {
 	}
 
 	// Get theme styles
-	titleStyle, scoreStyle, _, _ := m.getStyles()
+	titleStyle, scoreStyle, _, _ := getStyles(m)
 
 	// Display ASCII art title
 	flappyStyled := titleStyle.Render(flappyArt)
 	birdStyled := titleStyle.Render(birdArt)
 
-	b.WriteString(centerText(flappyStyled, m.width))
+	b.WriteString(centerText(flappyStyled, m.Width))
 	b.WriteString("\n")
-	b.WriteString(centerText(birdStyled, m.width))
+	b.WriteString(centerText(birdStyled, m.Width))
 	b.WriteString("\n")
-	b.WriteString(centerText(subtitle, m.width))
+	b.WriteString(centerText(subtitle, m.Width))
 	b.WriteString("\n\n")
-	b.WriteString(centerText(difficultyText, m.width))
+	b.WriteString(centerText(difficultyText, m.Width))
 	b.WriteString("\n")
 
 	// Display theme selection
-	themeText := fmt.Sprintf("Theme: %s (Press T to change)", m.theme.String())
-	b.WriteString(centerText(themeText, m.width))
+	themeText := fmt.Sprintf("Theme: %s (Press T to change)", m.Theme.String())
+	b.WriteString(centerText(themeText, m.Width))
 	b.WriteString("\n")
 
-	b.WriteString(centerText(instructions, m.width))
+	b.WriteString(centerText(instructions, m.Width))
 
 	// Display high score if it exists
-	if m.highScore.Score > 0 {
+	if m.HighScore.Score > 0 {
 		b.WriteString("\n\n")
-		minutes := int(m.highScore.Duration.Minutes())
-		seconds := int(m.highScore.Duration.Seconds()) % 60
-		milliseconds := int(m.highScore.Duration.Milliseconds()) % 1000
+		minutes, seconds, milliseconds := formatDuration(m.HighScore.Duration)
 		highScoreText := fmt.Sprintf("High Score: %d  |  Time: %02d:%02d.%03d",
-			m.highScore.Score, minutes, seconds, milliseconds)
-		b.WriteString(centerText(scoreStyle.Render(highScoreText), m.width))
+			m.HighScore.Score, minutes, seconds, milliseconds)
+		b.WriteString(centerText(scoreStyle.Render(highScoreText), m.Width))
 	}
 
 	return b.String()
 }
 
-func (m Model) renderGame() string {
+func renderGame(m game.Model) string {
 	// Get theme styles
-	_, scoreStyle, _, _ := m.getStyles()
+	_, scoreStyle, _, _ := getStyles(m)
 
 	// Create empty canvas
-	canvas := make([][]rune, m.height)
+	canvas := make([][]rune, m.Height)
 	for i := range canvas {
-		canvas[i] = make([]rune, m.width)
+		canvas[i] = make([]rune, m.Width)
 		for j := range canvas[i] {
 			canvas[i][j] = ' '
 		}
 	}
 
 	// Draw pipes (▢▢▢▢ with ■■■■ edge)
-	for _, pipe := range m.pipes {
-		for x := pipe.x; x < pipe.x+pipeWidth && x < m.width; x++ {
+	for _, pipe := range m.Pipes {
+		for x := pipe.X; x < pipe.X+domain.PipeWidth && x < m.Width; x++ {
 			if x < 0 {
 				continue
 			}
 
 			// Top pipe - body is ▢, bottom edge is ■
-			for y := 0; y < pipe.gapY; y++ {
+			for y := 0; y < pipe.GapY; y++ {
 				char := pipeBodyChar
-				if y == pipe.gapY-1 {
+				if y == pipe.GapY-1 {
 					// Bottom edge of top pipe
 					char = pipeEdgeChar
 				}
@@ -163,9 +173,9 @@ func (m Model) renderGame() string {
 			}
 
 			// Bottom pipe - body is ▢, top edge is ■
-			for y := pipe.gapY + pipe.gapSize; y < m.height; y++ {
+			for y := pipe.GapY + pipe.GapSize; y < m.Height; y++ {
 				char := pipeBodyChar
-				if y == pipe.gapY+pipe.gapSize {
+				if y == pipe.GapY+pipe.GapSize {
 					// Top edge of bottom pipe
 					char = pipeEdgeChar
 				}
@@ -175,12 +185,12 @@ func (m Model) renderGame() string {
 	}
 
 	// Draw bird (2 characters: mO or wO)
-	birdY := m.bird.GetY()
-	birdSprite := m.bird.GetSprite()
-	if birdY >= 0 && birdY < m.height && m.bird.x >= 0 && m.bird.x+1 < m.width {
+	birdY := m.Bird.GetY()
+	birdSprite := m.Bird.GetSprite()
+	if birdY >= 0 && birdY < m.Height && m.Bird.X >= 0 && m.Bird.X+1 < m.Width {
 		spriteRunes := []rune(birdSprite)
-		canvas[birdY][m.bird.x] = spriteRunes[0]     // First character (m or w)
-		canvas[birdY][m.bird.x+1] = spriteRunes[1]   // Second character (O)
+		canvas[birdY][m.Bird.X] = spriteRunes[0]   // First character (m or w)
+		canvas[birdY][m.Bird.X+1] = spriteRunes[1] // Second character (O)
 	}
 
 	// Convert canvas to string
@@ -191,12 +201,10 @@ func (m Model) renderGame() string {
 	}
 
 	// Add score and elapsed time
-	elapsed := time.Since(m.startTime)
-	minutes := int(elapsed.Minutes())
-	seconds := int(elapsed.Seconds()) % 60
-	milliseconds := int(elapsed.Milliseconds()) % 1000
+	elapsed := time.Since(m.StartTime)
+	minutes, seconds, milliseconds := formatDuration(elapsed)
 
-	score := scoreStyle.Render(fmt.Sprintf("Score: %d", m.score))
+	score := scoreStyle.Render(fmt.Sprintf("Score: %d", m.Score))
 	timeDisplay := scoreStyle.Render(fmt.Sprintf("Time: %02d:%02d.%03d", minutes, seconds, milliseconds))
 
 	b.WriteString(score)
@@ -206,9 +214,9 @@ func (m Model) renderGame() string {
 	return b.String()
 }
 
-func (m Model) renderGameOver() string {
+func renderGameOver(m game.Model) string {
 	// Get theme styles
-	_, _, gameOverStyle, newRecordStyle := m.getStyles()
+	_, _, gameOverStyle, newRecordStyle := getStyles(m)
 
 	var b strings.Builder
 
@@ -220,7 +228,7 @@ func (m Model) renderGameOver() string {
 ╚██████╔╝██║  ██║██║ ╚═╝ ██║███████╗    ╚██████╔╝ ╚████╔╝ ███████╗██║  ██║
  ╚═════╝ ╚═╝  ╚═╝╚═╝     ╚═╝╚══════╝     ╚═════╝   ╚═══╝  ╚══════╝╚═╝  ╚═╝`
 
-	padding := (m.height - 12) / 2
+	padding := (m.Height - gameOverPadding) / 2
 	if padding < 0 {
 		padding = 0
 	}
@@ -230,59 +238,53 @@ func (m Model) renderGameOver() string {
 
 	// Display ASCII art
 	gameOverArt := gameOverStyle.Render(asciiArt)
-	b.WriteString(centerText(gameOverArt, m.width))
+	b.WriteString(centerText(gameOverArt, m.Width))
 	b.WriteString("\n\n")
 
 	// Calculate elapsed time
-	elapsed := time.Since(m.startTime)
-	minutes := int(elapsed.Minutes())
-	seconds := int(elapsed.Seconds()) % 60
-	milliseconds := int(elapsed.Milliseconds()) % 1000
+	elapsed := time.Since(m.StartTime)
+	minutes, seconds, milliseconds := formatDuration(elapsed)
 
 	// Display new record message if applicable
-	if m.isNewRecord {
+	if m.IsNewRecord {
 		newRecord := newRecordStyle.Render("★ NEW RECORD! ★")
-		b.WriteString(centerText(newRecord, m.width))
+		b.WriteString(centerText(newRecord, m.Width))
 		b.WriteString("\n")
 	}
 
 	// Display score and time
-	score := fmt.Sprintf("Score: %d  |  Time: %02d:%02d.%03d", m.score, minutes, seconds, milliseconds)
-	b.WriteString(centerText(score, m.width))
+	score := fmt.Sprintf("Score: %d  |  Time: %02d:%02d.%03d", m.Score, minutes, seconds, milliseconds)
+	b.WriteString(centerText(score, m.Width))
 	b.WriteString("\n")
 
 	// Display statistics
-	avgHeight := 0.0
-	if m.heightSamples > 0 {
-		avgHeight = float64(m.totalHeight) / float64(m.heightSamples)
-	}
-	stats := fmt.Sprintf("Jumps: %d  |  Max Height: %d  |  Avg: %.1f", m.jumpCount, m.maxHeight, avgHeight)
-	b.WriteString(centerText(stats, m.width))
+	stats := fmt.Sprintf("Jumps: %d  |  Max Height: %d  |  Avg: %.1f", m.Stats.JumpCount, m.Stats.MaxHeight, m.AvgHeight())
+	b.WriteString(centerText(stats, m.Width))
 	b.WriteString("\n\n")
 
 	// Display rankings (top 5 for game over screen)
-	if len(m.rankings) > 0 {
-		b.WriteString(centerText("=== TOP RANKINGS ===", m.width))
+	if len(m.Rankings) > 0 {
+		b.WriteString(centerText("=== TOP RANKINGS ===", m.Width))
 		b.WriteString("\n")
 		displayCount := 5
-		if len(m.rankings) < displayCount {
-			displayCount = len(m.rankings)
+		if len(m.Rankings) < displayCount {
+			displayCount = len(m.Rankings)
 		}
 		for i := 0; i < displayCount; i++ {
-			rank := m.rankings[i]
+			rank := m.Rankings[i]
 			rankMin := int(rank.Duration.Minutes())
 			rankSec := int(rank.Duration.Seconds()) % 60
 			rankMs := int(rank.Duration.Milliseconds()) % 1000
 			rankText := fmt.Sprintf("%d. %d pts  %02d:%02d.%03d  [%s]",
 				i+1, rank.Score, rankMin, rankSec, rankMs, rank.Difficulty)
-			b.WriteString(centerText(rankText, m.width))
+			b.WriteString(centerText(rankText, m.Width))
 			b.WriteString("\n")
 		}
 		b.WriteString("\n")
 	}
 
 	instructions := "Press SPACE or R to restart  |  Press Q to quit"
-	b.WriteString(centerText(instructions, m.width))
+	b.WriteString(centerText(instructions, m.Width))
 
 	return b.String()
 }

@@ -1,4 +1,4 @@
-package main
+package domain
 
 const (
 	gravity   = 0.3  // Reduced from 0.8 - gentler fall
@@ -7,39 +7,39 @@ const (
 
 // Bird represents the player character
 type Bird struct {
-	x        int
-	y        float64
-	velocity float64
+	X        int
+	Y        float64
+	Velocity float64
 }
 
 // NewBird creates a new bird at the given position
 func NewBird(x int, y int) *Bird {
 	return &Bird{
-		x:        x,
-		y:        float64(y),
-		velocity: 0,
+		X:        x,
+		Y:        float64(y),
+		Velocity: 0,
 	}
 }
 
 // Jump makes the bird flap upward
 func (b *Bird) Jump() {
-	b.velocity = jumpForce
+	b.Velocity = jumpForce
 }
 
 // Update applies gravity and updates position
 func (b *Bird) Update() {
-	b.velocity += gravity
-	b.y += b.velocity
+	b.Velocity += gravity
+	b.Y += b.Velocity
 }
 
 // GetY returns the bird's current Y position as an integer
 func (b *Bird) GetY() int {
-	return int(b.y)
+	return int(b.Y)
 }
 
 // GetSprite returns the bird's sprite based on velocity
 func (b *Bird) GetSprite() string {
-	if b.velocity < 0 {
+	if b.Velocity < 0 {
 		// Going up
 		return "^○"
 	}

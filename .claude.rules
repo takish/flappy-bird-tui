@@ -1,10 +1,11 @@
-Never use console.log or fmt.Println in game logic - use PlaySound() for audio feedback
+Never use console.log or fmt.Println in game logic - use storage.PlaySound() for audio feedback
 Always run go fmt before committing
-Maintain Model immutability - return new Model from Update(), never mutate in place
-Keep View() pure - no side effects, only render based on Model
-Add tests for new physics or scoring logic
-Use lipgloss for all terminal styling - no ANSI codes directly
+Maintain Model immutability - return new game.Model from Update(), never mutate in place
+Keep ui.View() pure - no side effects, only render based on game.Model
+Add tests for new physics or scoring logic in domain/ and storage/ packages
+Use lipgloss for all terminal styling in ui/ - no ANSI codes directly
 Keep game speed between 10-60ms for playability
 Preserve GameState transitions through resetGame() - never lose high scores
-Use constants for magic numbers (pipe gaps, speeds, dimensions)
+Use constants for magic numbers (pipe gaps, speeds, dimensions) in domain/ package
 Always handle terminal resize gracefully in Bubble Tea updates
+Follow layered architecture - domain/ has no external dependencies, game/ uses domain/, ui/ renders game.Model

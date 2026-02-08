@@ -1,4 +1,4 @@
-package main
+package domain
 
 import "github.com/charmbracelet/lipgloss"
 
@@ -13,9 +13,9 @@ const (
 
 // ColorScheme holds the colors for a theme
 type ColorScheme struct {
-	Title    lipgloss.Color
-	Score    lipgloss.Color
-	GameOver lipgloss.Color
+	Title     lipgloss.Color
+	Score     lipgloss.Color
+	GameOver  lipgloss.Color
 	NewRecord lipgloss.Color
 }
 
