@@ -24,3 +24,18 @@ dist/
 # Claude Code settings (personal development environment)
 .claude/
 .github/
+
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Credentials
+*credentials*
+*secret*
+
+# Private keys
+*.pem
+*.key
+*.p12
+*.pfx
