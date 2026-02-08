@@ -36,3 +36,13 @@ func (b *Bird) Update() {
 func (b *Bird) GetY() int {
 	return int(b.y)
 }
+
+// GetSprite returns the bird's sprite based on velocity
+func (b *Bird) GetSprite() string {
+	if b.velocity < 0 {
+		// Going up
+		return "^〇"
+	}
+	// Going down
+	return "v〇"
+}

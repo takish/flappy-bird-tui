@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	birdChar = "●" // Round bird - more visible
-	pipeChar = "▓" // Block pattern - Mario-style
+	birdChar     = "●" // Round bird - more visible
+	pipeBodyChar = "▓" // Pipe body - dark pattern block
+	pipeEdgeChar = "█" // Pipe edge - solid block
 )
 
 // getStyles returns the styles for the current theme
@@ -144,27 +145,42 @@ func (m Model) renderGame() string {
 		}
 	}
 
-	// Draw pipes
+	// Draw pipes (▢▢▢▢ with ■■■■ edge)
 	for _, pipe := range m.pipes {
 		for x := pipe.x; x < pipe.x+pipeWidth && x < m.width; x++ {
 			if x < 0 {
 				continue
 			}
-			// Top pipe
+
+			// Top pipe - body is ▢, bottom edge is ■
 			for y := 0; y < pipe.gapY; y++ {
-				canvas[y][x] = []rune(pipeChar)[0]
+				char := pipeBodyChar
+				if y == pipe.gapY-1 {
+					// Bottom edge of top pipe
+					char = pipeEdgeChar
+				}
+				canvas[y][x] = []rune(char)[0]
 			}
-			// Bottom pipe
+
+			// Bottom pipe - body is ▢, top edge is ■
 			for y := pipe.gapY + pipe.gapSize; y < m.height; y++ {
-				canvas[y][x] = []rune(pipeChar)[0]
+				char := pipeBodyChar
+				if y == pipe.gapY+pipe.gapSize {
+					// Top edge of bottom pipe
+					char = pipeEdgeChar
+				}
+				canvas[y][x] = []rune(char)[0]
 			}
 		}
 	}
 
-	// Draw bird
+	// Draw bird (2 characters: mO or wO)
 	birdY := m.bird.GetY()
-	if birdY >= 0 && birdY < m.height && m.bird.x >= 0 && m.bird.x < m.width {
-		canvas[birdY][m.bird.x] = []rune(birdChar)[0]
+	birdSprite := m.bird.GetSprite()
+	if birdY >= 0 && birdY < m.height && m.bird.x >= 0 && m.bird.x+1 < m.width {
+		spriteRunes := []rune(birdSprite)
+		canvas[birdY][m.bird.x] = spriteRunes[0]     // First character (m or w)
+		canvas[birdY][m.bird.x+1] = spriteRunes[1]   // Second character (O)
 	}
 
 	// Convert canvas to string

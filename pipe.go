@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	pipeWidth = 5 // Width of pipes - increased from 4 for thicker blocks
+	pipeWidth = 8 // Width of pipes - doubled for thicker dokan
 	minPipeY  = 3 // Minimum gap from top
 )
 
@@ -45,11 +45,14 @@ func (p *Pipe) IsOffScreen() bool {
 func (p *Pipe) CollidesWith(bird *Bird) bool {
 	birdY := bird.GetY()
 
-	// Check if bird is horizontally aligned with pipe
-	if bird.x >= p.x && bird.x < p.x+pipeWidth {
-		// Check if bird is outside the gap
-		if birdY < p.gapY || birdY >= p.gapY+p.gapSize {
-			return true
+	// Bird is 2 characters wide (mO or wO), check both positions
+	for birdX := bird.x; birdX < bird.x+2; birdX++ {
+		// Check if bird is horizontally aligned with pipe
+		if birdX >= p.x && birdX < p.x+pipeWidth {
+			// Check if bird is outside the gap
+			if birdY < p.gapY || birdY >= p.gapY+p.gapSize {
+				return true
+			}
 		}
 	}
 
@@ -58,5 +61,6 @@ func (p *Pipe) CollidesWith(bird *Bird) bool {
 
 // IsPassed checks if the bird has passed this pipe
 func (p *Pipe) IsPassed(bird *Bird) bool {
-	return bird.x > p.x+pipeWidth && !p.passed
+	// Bird is 2 characters wide, check the right edge (bird.x+1)
+	return bird.x+1 > p.x+pipeWidth && !p.passed
 }
